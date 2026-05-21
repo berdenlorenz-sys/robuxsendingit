@@ -240,6 +240,62 @@ export function SendRobuxModal({
                 </button>
               ))}
             </div>
+
+            {/* Recent Activity */}
+            <div className="mt-4 border-t border-white/5 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowHistory((s) => !s)}
+                className="w-full flex items-center justify-between px-1 py-1.5 text-left group"
+              >
+                <div className="flex items-center gap-2">
+                  <History className="w-3.5 h-3.5 text-white/50" strokeWidth={2.2} />
+                  <span className="text-[13px] font-extrabold text-white/80 group-hover:text-white">
+                    Recent Activity
+                  </span>
+                  {history.length > 0 && (
+                    <span className="text-[11px] text-white/40 font-semibold">
+                      {history.length}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-white/40 transition-transform",
+                    showHistory && "rotate-180",
+                  )}
+                />
+              </button>
+              {showHistory && (
+                <div className="mt-1 max-h-[180px] overflow-y-auto -mx-2 pr-1">
+                  {history.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-white/40 text-[12px]">
+                      No recent transactions
+                    </div>
+                  ) : (
+                    history.map((h) => (
+                      <div
+                        key={h.id}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[12.5px] text-white/80 truncate">
+                            Sent{" "}
+                            <span className="font-bold text-white">
+                              {formatFull(h.amount)} Robux
+                            </span>{" "}
+                            to <span className="font-semibold text-white">{h.name}</span>
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-white/40 shrink-0 ml-2">
+                          {timeAgo(h.at)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -258,7 +314,10 @@ export function SendRobuxModal({
               {PRESETS.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setAmount(p)}
+                  onClick={() => {
+                    setAmount(p);
+                    setCustomAmount("");
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-3 h-9 rounded-lg border text-[13px] font-semibold transition-colors",
                     amount === p
@@ -270,6 +329,32 @@ export function SendRobuxModal({
                   {p}
                 </button>
               ))}
+            </div>
+            <div className="w-full mb-4">
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1.5">
+                Custom amount
+              </label>
+              <div className="relative">
+                <RobuxIcon
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
+                />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={balance}
+                  value={customAmount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCustomAmount(v);
+                    const n = parseInt(v, 10);
+                    if (!isNaN(n) && n > 0) setAmount(n);
+                  }}
+                  placeholder="Enter amount"
+                  className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-10 pr-3 text-[15px] text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                />
+              </div>
             </div>
             <button
               onClick={handleSend}
