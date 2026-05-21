@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Search, Loader2, Check } from "lucide-react";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
-import { searchRobloxUsersClient, MIN_QUERY_LENGTH } from "@/lib/roblox-search-client";
+import { searchRobloxUsersClient } from "@/lib/roblox-search-client";
 import { RobloxAvatar } from "./RobloxAvatar";
 import { formatFull } from "@/lib/format";
 
@@ -31,14 +31,8 @@ export function SettingsModal({
   const [results, setResults] = useState<RobloxUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [picked, setPicked] = useState<CurrentUser>(user);
-  const [retryNonce, setRetryNonce] = useState(0);
-  const retryTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
-    };
-  }, []);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -46,52 +40,32 @@ export function SettingsModal({
       setPicked(user);
       setQuery("");
       setResults([]);
+      setErrMsg(null);
+      setSearched(false);
     }
   }, [open, balance, user]);
 
-  useEffect(() => {
-    if (!open) return;
-    if (retryTimerRef.current) {
-      window.clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = null;
-    }
+  const runSearch = async () => {
     const q = query.trim();
-    if (q.length === 0) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
-    if (q.length < MIN_QUERY_LENGTH) {
-      setLoading(false);
-      return;
-    }
+    if (q.length === 0 || loading) return;
     setLoading(true);
-    const ctrl = new AbortController();
-    const t = setTimeout(async () => {
-      try {
-        const res = await searchRobloxUsersClient(search, q);
-        if (ctrl.signal.aborted) return;
-        if (!res.error) {
-          setResults(res.users);
-        } else if (res.retryAfterMs && !retryTimerRef.current) {
-          retryTimerRef.current = window.setTimeout(() => {
-            retryTimerRef.current = null;
-            if (!ctrl.signal.aborted) setRetryNonce((current) => current + 1);
-          }, res.retryAfterMs);
-        }
-      } finally {
-        if (!ctrl.signal.aborted) setLoading(false);
+    setErrMsg(null);
+    setSearched(true);
+    try {
+      const res = await searchRobloxUsersClient(search, q);
+      if (res.error) {
+        setErrMsg(res.error);
+        setResults([]);
+      } else {
+        setResults(res.users);
       }
-    }, 500);
-    return () => {
-      ctrl.abort();
-      clearTimeout(t);
-      if (retryTimerRef.current) {
-        window.clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = null;
-      }
-    };
-  }, [query, open, retryNonce, search]);
+    } catch {
+      setErrMsg("Search failed");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -160,18 +134,43 @@ export function SettingsModal({
             <label className="block text-[12px] font-bold text-white/70 mb-2 uppercase tracking-wider">
               Roblox username
             </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search to change your profile"
-                className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-9 pr-9 text-sm text-white placeholder:text-white/40 focus:outline-none"
-              />
-              {loading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
-              )}
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                runSearch();
+              }}
+              className="flex gap-2"
+            >
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setErrMsg(null);
+                  }}
+                  placeholder="Type a username, then Search"
+                  className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-9 pr-9 text-sm text-white placeholder:text-white/40 focus:outline-none"
+                />
+                {loading && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading || query.trim().length === 0}
+                className="h-11 px-4 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 text-[13px] font-bold text-white"
+              >
+                Search
+              </button>
+            </form>
+
+            {searched && errMsg && (
+              <p className="text-[12px] text-red-400 mt-2">{errMsg}</p>
+            )}
+            {searched && !loading && !errMsg && results.length === 0 && (
+              <p className="text-[12px] text-white/50 mt-2">No players found</p>
+            )}
 
             {results.length > 0 && (
               <div className="mt-2 border border-white/10 rounded-lg overflow-hidden">

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Search, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
-import { searchRobloxUsersClient, MIN_QUERY_LENGTH } from "@/lib/roblox-search-client";
+import { searchRobloxUsersClient } from "@/lib/roblox-search-client";
 import { RobloxAvatar } from "./RobloxAvatar";
 
 const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number }) => (
@@ -52,70 +52,29 @@ export function SendRobuxModal({
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
-  const [retryNonce, setRetryNonce] = useState(0);
-  const retryTimerRef = useRef<number | null>(null);
+  const [searched, setSearched] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
-    };
-  }, []);
-
-  // Debounced Roblox search — min 2 chars, 500ms debounce, keep prior results on refetch
-  useEffect(() => {
-    if (!open) return;
-    if (retryTimerRef.current) {
-      window.clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = null;
-    }
+  const runSearch = async () => {
     const q = query.trim();
-    if (q.length === 0) {
-      setResults([]);
-      setErrMsg(null);
-      setLoading(false);
-      return;
-    }
-    if (q.length < MIN_QUERY_LENGTH) {
-      setLoading(false);
-      return;
-    }
+    if (q.length === 0 || loading) return;
     setLoading(true);
     setErrMsg(null);
-    const ctrl = new AbortController();
-    const t = setTimeout(async () => {
-      try {
-        const res = await searchRobloxUsersClient(search, q);
-        if (ctrl.signal.aborted) return;
-        if (res.error) {
-          setErrMsg(res.error);
-          if (res.retryAfterMs && !retryTimerRef.current) {
-            retryTimerRef.current = window.setTimeout(() => {
-              retryTimerRef.current = null;
-              if (!ctrl.signal.aborted) setRetryNonce((current) => current + 1);
-            }, res.retryAfterMs);
-          }
-        } else {
-          setResults(res.users.map(toFriend));
-          setErrMsg(null);
-        }
-      } catch (e) {
-        if (!ctrl.signal.aborted) setErrMsg("Search failed");
-      } finally {
-        if (!ctrl.signal.aborted) setLoading(false);
+    setSearched(true);
+    try {
+      const res = await searchRobloxUsersClient(search, q);
+      if (res.error) {
+        setErrMsg(res.error);
+        setResults([]);
+      } else {
+        setResults(res.users.map(toFriend));
       }
-    }, 500);
-    return () => {
-      ctrl.abort();
-      clearTimeout(t);
-      if (retryTimerRef.current) {
-        window.clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = null;
-      }
-    };
-  }, [query, open, retryNonce, search]);
-
-
-  const showHint = useMemo(() => query.trim().length === 0, [query]);
+    } catch {
+      setErrMsg("Search failed");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -126,6 +85,7 @@ export function SendRobuxModal({
     setErrMsg(null);
     setFriend(null);
     setAmount(200);
+    setSearched(false);
   };
   const handleClose = () => {
     reset();
@@ -173,34 +133,52 @@ export function SendRobuxModal({
         {/* Body */}
         {step === "pick" && (
           <div className="p-5">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by username"
-                className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
-              />
-              {loading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
-              )}
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                runSearch();
+              }}
+              className="flex gap-2 mb-4"
+            >
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setErrMsg(null);
+                  }}
+                  placeholder="Search by username"
+                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
+                />
+                {loading && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading || query.trim().length === 0}
+                className="h-12 px-4 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 font-bold text-white text-[14px] transition-colors"
+              >
+                Search
+              </button>
+            </form>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
-              {showHint ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
+              {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
             </div>
 
             <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
-              {showHint && (
+              {!searched && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">
-                  Search Roblox to send Robux to friends
+                  Type a username and press Search
                 </div>
               )}
-              {!showHint && errMsg && (
+              {searched && errMsg && (
                 <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
               )}
-              {!showHint && !loading && !errMsg && results.length === 0 && (
+              {searched && !loading && !errMsg && results.length === 0 && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">No players found</div>
               )}
               {results.map((f) => (
