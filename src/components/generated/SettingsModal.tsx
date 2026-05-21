@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Search, Loader2, Check } from "lucide-react";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
+import { searchRobloxUsersClient, MIN_QUERY_LENGTH } from "@/lib/roblox-search-client";
 import { RobloxAvatar } from "./RobloxAvatar";
 import { formatFull } from "@/lib/format";
 
@@ -60,7 +61,7 @@ export function SettingsModal({
       setLoading(false);
       return;
     }
-    if (q.length < 2) {
+    if (q.length < MIN_QUERY_LENGTH) {
       setLoading(false);
       return;
     }
@@ -68,7 +69,7 @@ export function SettingsModal({
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const res = await search({ data: { keyword: q, limit: 10 } });
+        const res = await searchRobloxUsersClient(search, q);
         if (ctrl.signal.aborted) return;
         if (!res.error) {
           setResults(res.users);

@@ -4,6 +4,7 @@ import { X, Search, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
+import { searchRobloxUsersClient, MIN_QUERY_LENGTH } from "@/lib/roblox-search-client";
 import { RobloxAvatar } from "./RobloxAvatar";
 
 const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number }) => (
@@ -74,7 +75,7 @@ export function SendRobuxModal({
       setLoading(false);
       return;
     }
-    if (q.length < 2) {
+    if (q.length < MIN_QUERY_LENGTH) {
       setLoading(false);
       return;
     }
@@ -83,7 +84,7 @@ export function SendRobuxModal({
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const res = await search({ data: { keyword: q, limit: 10 } });
+        const res = await searchRobloxUsersClient(search, q);
         if (ctrl.signal.aborted) return;
         if (res.error) {
           setErrMsg(res.error);
