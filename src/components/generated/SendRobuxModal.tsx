@@ -16,7 +16,14 @@ const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number
 
 const PRESETS = [25, 50, 100, 200];
 
-type Activity = { id: string; name: string; handle: string; amount: number; at: number };
+type Activity = {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl: string | null;
+  amount: number;
+  at: number;
+};
 const HISTORY_KEY = "rsp:recent-activity";
 
 const loadHistory = (): Activity[] => {
@@ -129,6 +136,7 @@ export function SendRobuxModal({
           id: `${Date.now()}-${friend.id}`,
           name: friend.name,
           handle: friend.handle,
+          avatarUrl: friend.avatarUrl,
           amount,
           at: Date.now(),
         };
@@ -278,14 +286,20 @@ export function SendRobuxModal({
                         key={h.id}
                         className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
                       >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-[12.5px] text-white/80 truncate">
-                            Sent{" "}
-                            <span className="font-bold text-white">
-                              {formatFull(h.amount)} Robux
-                            </span>{" "}
-                            to <span className="font-semibold text-white">{h.name}</span>
-                          </span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <RobloxAvatar src={h.avatarUrl ?? null} alt={h.name} size={32} />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[12.5px] text-white/90 font-semibold truncate">
+                              {h.name}
+                              <span className="text-white/40 font-normal"> {h.handle}</span>
+                            </span>
+                            <span className="text-[11.5px] text-white/60 truncate">
+                              Sent{" "}
+                              <span className="font-bold text-white">
+                                {formatFull(h.amount)} Robux
+                              </span>
+                            </span>
+                          </div>
                         </div>
                         <span className="text-[11px] text-white/40 shrink-0 ml-2">
                           {timeAgo(h.at)}
