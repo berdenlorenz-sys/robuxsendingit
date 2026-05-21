@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Search, Check, Loader2 } from "lucide-react";
+import { X, Search, Check, Loader2, ChevronDown, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
@@ -15,6 +15,30 @@ const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number
 );
 
 const PRESETS = [25, 50, 100, 200];
+
+type Activity = { id: string; name: string; handle: string; amount: number; at: number };
+const HISTORY_KEY = "rsp:recent-activity";
+
+const loadHistory = (): Activity[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const timeAgo = (ts: number): string => {
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 45) return "Just now";
+  if (s < 90) return "1 min ago";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+};
 
 type Friend = {
   id: string;
@@ -53,6 +77,9 @@ export function SendRobuxModal({
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
   const [searched, setSearched] = useState(false);
+  const [history, setHistory] = useState<Activity[]>(loadHistory);
+  const [showHistory, setShowHistory] = useState(false);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const runSearch = async () => {
     const q = query.trim();
@@ -86,6 +113,7 @@ export function SendRobuxModal({
     setFriend(null);
     setAmount(200);
     setSearched(false);
+    setCustomAmount("");
   };
   const handleClose = () => {
     reset();
@@ -96,6 +124,20 @@ export function SendRobuxModal({
     setStep("sending");
     setTimeout(() => {
       onSent(amount);
+      if (friend) {
+        const entry: Activity = {
+          id: `${Date.now()}-${friend.id}`,
+          name: friend.name,
+          handle: friend.handle,
+          amount,
+          at: Date.now(),
+        };
+        const next = [entry, ...history].slice(0, 25);
+        setHistory(next);
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+        } catch {}
+      }
       setStep("done");
     }, 1600);
   };
