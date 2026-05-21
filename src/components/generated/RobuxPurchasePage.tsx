@@ -36,7 +36,7 @@ export const RobuxPurchasePage = () => {
     handle: '@newuser',
     avatarUrl: null,
   });
-  return <div className="min-h-screen flex flex-col bg-[#121212] text-white font-sans overflow-hidden">
+  return <div className="min-h-screen flex flex-col bg-[#0f0f13] text-white font-sans overflow-hidden">
       {/* Top Navigation Bar */}
       <nav className="h-12 bg-[#1b1b1e] border-b border-white/5 flex items-center px-6 shrink-0 fixed top-0 w-full z-50 justify-between gap-4">
         <div className="flex items-center gap-8 h-full shrink-0">
@@ -149,7 +149,7 @@ export const RobuxPurchasePage = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-[#121212] ml-0 md:ml-[250px] overflow-y-auto p-8 relative h-full">
+        <main className="flex-1 bg-[#0f0f13] ml-0 md:ml-[250px] overflow-y-auto p-8 relative h-full">
           <div className="max-w-3xl mx-auto w-full pb-20">
             {/* Top Right Action */}
             <div className="absolute top-6 right-8 flex items-center gap-3 bg-[#191a1f] rounded-full py-2 pl-5 pr-2 max-w-[calc(100%-2rem)]">

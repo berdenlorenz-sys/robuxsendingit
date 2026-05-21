@@ -30,20 +30,6 @@ const toFriend = (u: RobloxUser): Friend => ({
   avatarUrl: u.avatarUrl,
 });
 
-const FRIEND_NAMES = [
-  "jeremy", "Ryuzen", "calmguy", "Cr4z3", "ROAR", "pilow",
-  "zxnyx", "kovu", "miraio", "skyfall", "nyxen", "drevon",
-  "lunaq", "venix", "korei", "ashen", "ravo", "miko",
-];
-
-const MY_FRIENDS: Friend[] = FRIEND_NAMES.map((n, i) => ({
-  id: `f-${i}`,
-  name: n,
-  handle: `@${n}`,
-  avatarUrl: null,
-}));
-const FRIEND_COUNT = 51;
-
 type Step = "pick" | "amount" | "sending" | "done";
 
 
@@ -152,56 +138,50 @@ export function SendRobuxModal({
                 e.preventDefault();
                 runSearch();
               }}
-              className="mb-4"
+              className="flex gap-2 mb-4"
             >
-              <div className="relative">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
                     setErrMsg(null);
-                    if (e.target.value.trim().length === 0) setSearched(false);
                   }}
                   placeholder="Search by username"
-                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl px-4 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
+                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {loading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
                 )}
               </div>
+              <button
+                type="submit"
+                disabled={loading || query.trim().length === 0}
+                className="h-12 px-4 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 font-bold text-white text-[14px] transition-colors"
+              >
+                Search
+              </button>
             </form>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
-              {!searched
-                ? `My friends (${FRIEND_COUNT})`
-                : `Results${results.length ? ` (${results.length})` : ""}`}
+              {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
             </div>
 
             <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
-              {!searched &&
-                MY_FRIENDS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => {
-                      setFriend(f);
-                      setStep("amount");
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
-                  >
-                    <RobloxAvatar src={f.avatarUrl} alt={f.name} size={32} />
-                    <span className="text-[14px] font-bold text-white truncate">
-                      {f.name}
-                    </span>
-                  </button>
-                ))}
+              {!searched && (
+                <div className="px-3 py-10 text-center text-white/50 text-sm">
+                  Type a username and press Search
+                </div>
+              )}
               {searched && errMsg && (
                 <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
               )}
               {searched && !loading && !errMsg && results.length === 0 && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">No players found</div>
               )}
-              {searched && results.map((f) => (
+              {results.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => {
