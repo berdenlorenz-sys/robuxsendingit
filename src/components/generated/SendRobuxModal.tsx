@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, Search, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,8 +75,6 @@ export function SendRobuxModal({
       setLoading(false);
     }
   };
-
-  const showHint = useMemo(() => query.trim().length === 0, [query]);
 
   if (!open) return null;
 
