@@ -19,7 +19,7 @@ const clampLimit = (n: number) =>
   ALLOWED_LIMITS.reduce((prev, curr) => (Math.abs(curr - n) < Math.abs(prev - n) ? curr : prev), 10);
 const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const STALE_CACHE_TTL_MS = 20 * 60 * 1000;
-const RETRY_AFTER_MS = 2_000;
+const RETRY_AFTER_MS = 10_000;
 
 const searchCache = new Map<string, { users: RobloxUser[]; at: number }>();
 const avatarCache = new Map<number, string | null>();
