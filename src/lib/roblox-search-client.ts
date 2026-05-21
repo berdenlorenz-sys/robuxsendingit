@@ -1,4 +1,4 @@
-import { searchRobloxUsers, type RobloxUser } from "./roblox.functions";
+import type { RobloxUser } from "./roblox.functions";
 
 type SearchResult = { users: RobloxUser[]; error: string | null; retryAfterMs: number | null };
 
@@ -11,11 +11,6 @@ export const MAX_SUGGESTIONS = 2;
 
 export function getCooldownRemainingMs() {
   return Math.max(0, cooldownUntil - Date.now());
-}
-
-type SearchFn = ReturnType<typeof useSearchFnPlaceholder>;
-function useSearchFnPlaceholder() {
-  return searchRobloxUsers;
 }
 
 export async function searchRobloxUsersClient(
@@ -48,4 +43,4 @@ export async function searchRobloxUsersClient(
   return sliced;
 }
 
-export type { SearchResult, SearchFn };
+export type { SearchResult };
