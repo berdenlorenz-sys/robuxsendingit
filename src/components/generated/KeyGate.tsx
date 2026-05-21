@@ -184,7 +184,9 @@ export function KeyGate({ children }: { children: ReactNode }) {
             className="mt-4 w-full h-12 rounded-xl bg-white/10 hover:bg-white/15 disabled:bg-white/[0.045] disabled:text-white/30 border border-white/10 text-white font-black text-[14px] transition-all flex items-center justify-center gap-2"
           >
             {status === "loading" && <Loader2 className="w-4 h-4 animate-spin" />}
-            {status === "success" && <Check className="w-4 h-4 animate-in zoom-in-50 duration-300" />}
+            {status === "success" && (
+              <Check className="w-4 h-4 animate-in zoom-in-50 duration-300" />
+            )}
             {status === "loading" ? "Verifying" : "Verify Key"}
           </button>
 
