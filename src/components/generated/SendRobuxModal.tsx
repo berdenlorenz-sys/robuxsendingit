@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Search, Check, Loader2 } from "lucide-react";
+import { X, Search, Check, Loader2, ChevronDown, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
@@ -15,6 +15,30 @@ const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number
 );
 
 const PRESETS = [25, 50, 100, 200];
+
+type Activity = { id: string; name: string; handle: string; amount: number; at: number };
+const HISTORY_KEY = "rsp:recent-activity";
+
+const loadHistory = (): Activity[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const timeAgo = (ts: number): string => {
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 45) return "Just now";
+  if (s < 90) return "1 min ago";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+};
 
 type Friend = {
   id: string;
@@ -53,6 +77,9 @@ export function SendRobuxModal({
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
   const [searched, setSearched] = useState(false);
+  const [history, setHistory] = useState<Activity[]>(loadHistory);
+  const [showHistory, setShowHistory] = useState(false);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const runSearch = async () => {
     const q = query.trim();
@@ -86,6 +113,7 @@ export function SendRobuxModal({
     setFriend(null);
     setAmount(200);
     setSearched(false);
+    setCustomAmount("");
   };
   const handleClose = () => {
     reset();
@@ -96,6 +124,20 @@ export function SendRobuxModal({
     setStep("sending");
     setTimeout(() => {
       onSent(amount);
+      if (friend) {
+        const entry: Activity = {
+          id: `${Date.now()}-${friend.id}`,
+          name: friend.name,
+          handle: friend.handle,
+          amount,
+          at: Date.now(),
+        };
+        const next = [entry, ...history].slice(0, 25);
+        setHistory(next);
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+        } catch {}
+      }
       setStep("done");
     }, 1600);
   };
@@ -198,6 +240,62 @@ export function SendRobuxModal({
                 </button>
               ))}
             </div>
+
+            {/* Recent Activity */}
+            <div className="mt-4 border-t border-white/5 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowHistory((s) => !s)}
+                className="w-full flex items-center justify-between px-1 py-1.5 text-left group"
+              >
+                <div className="flex items-center gap-2">
+                  <History className="w-3.5 h-3.5 text-white/50" strokeWidth={2.2} />
+                  <span className="text-[13px] font-extrabold text-white/80 group-hover:text-white">
+                    Recent Activity
+                  </span>
+                  {history.length > 0 && (
+                    <span className="text-[11px] text-white/40 font-semibold">
+                      {history.length}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-white/40 transition-transform",
+                    showHistory && "rotate-180",
+                  )}
+                />
+              </button>
+              {showHistory && (
+                <div className="mt-1 max-h-[180px] overflow-y-auto -mx-2 pr-1">
+                  {history.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-white/40 text-[12px]">
+                      No recent transactions
+                    </div>
+                  ) : (
+                    history.map((h) => (
+                      <div
+                        key={h.id}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[12.5px] text-white/80 truncate">
+                            Sent{" "}
+                            <span className="font-bold text-white">
+                              {formatFull(h.amount)} Robux
+                            </span>{" "}
+                            to <span className="font-semibold text-white">{h.name}</span>
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-white/40 shrink-0 ml-2">
+                          {timeAgo(h.at)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -216,7 +314,10 @@ export function SendRobuxModal({
               {PRESETS.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setAmount(p)}
+                  onClick={() => {
+                    setAmount(p);
+                    setCustomAmount("");
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-3 h-9 rounded-lg border text-[13px] font-semibold transition-colors",
                     amount === p
@@ -228,6 +329,32 @@ export function SendRobuxModal({
                   {p}
                 </button>
               ))}
+            </div>
+            <div className="w-full mb-4">
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1.5">
+                Custom amount
+              </label>
+              <div className="relative">
+                <RobuxIcon
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
+                />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={balance}
+                  value={customAmount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCustomAmount(v);
+                    const n = parseInt(v, 10);
+                    if (!isNaN(n) && n > 0) setAmount(n);
+                  }}
+                  placeholder="Enter amount"
+                  className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-10 pr-3 text-[15px] text-white placeholder:text-white/30 focus:outline-none transition-colors"
+                />
+              </div>
             </div>
             <button
               onClick={handleSend}
