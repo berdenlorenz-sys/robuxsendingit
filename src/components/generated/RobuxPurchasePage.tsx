@@ -3,6 +3,7 @@ import { Home, User, MessageSquare, Users, UserCircle, Briefcase, ArrowLeftRight
 import { cn } from '@/lib/utils';
 import { formatRobux, formatFull } from '@/lib/format';
 import SendRobuxModal from './SendRobuxModal';
+import KeyGate from './KeyGate';
 import SettingsModal, { type CurrentUser } from './SettingsModal';
 import { RobloxAvatar } from './RobloxAvatar';
 const rivalsBanner = "https://tr.rbxcdn.com/180DAY-227c6dec8836586299536584513dd518/768/432/Image/Png/noFilter";
@@ -36,7 +37,7 @@ export const RobuxPurchasePage = () => {
     handle: '@newuser',
     avatarUrl: null,
   });
-  return <div className="min-h-screen flex flex-col bg-[#0f0f13] text-white font-sans overflow-hidden">
+  return <KeyGate><div className="min-h-screen flex flex-col bg-[#0f0f13] text-white font-sans overflow-hidden">
       {/* Top Navigation Bar */}
       <nav className="h-12 bg-[#1b1b1e] border-b border-white/5 flex items-center px-6 shrink-0 fixed top-0 w-full z-50 justify-between gap-4">
         <div className="flex items-center gap-8 h-full shrink-0">
@@ -284,6 +285,6 @@ export const RobuxPurchasePage = () => {
           setCurrentUser(user);
         }}
       />
-    </div>;
+    </div></KeyGate>;
 };
 export default RobuxPurchasePage;
