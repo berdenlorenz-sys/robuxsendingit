@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Search, Check, Loader2, ChevronDown, History } from "lucide-react";
+import { X, Search, Check, Loader2, ChevronDown, History, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
@@ -32,6 +32,14 @@ const loadHistory = (): Activity[] => {
     return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   } catch {
     return [];
+  }
+};
+
+const saveHistory = (h: Activity[]) => {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  } catch {
+    /* noop */
   }
 };
 
