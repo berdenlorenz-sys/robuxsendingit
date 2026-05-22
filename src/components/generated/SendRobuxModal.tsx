@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Search, Check, Loader2, ChevronDown, History } from "lucide-react";
+import { X, Search, Check, Loader2, ChevronDown, History, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
 import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
@@ -32,6 +32,14 @@ const loadHistory = (): Activity[] => {
     return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   } catch {
     return [];
+  }
+};
+
+const saveHistory = (h: Activity[]) => {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  } catch {
+    /* noop */
   }
 };
 
@@ -251,10 +259,17 @@ export function SendRobuxModal({
 
             {/* Recent Activity */}
             <div className="mt-4 border-t border-white/5 pt-3">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowHistory((s) => !s)}
-                className="w-full flex items-center justify-between px-1 py-1.5 text-left group"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowHistory((s) => !s);
+                  }
+                }}
+                className="w-full flex items-center justify-between px-1 py-1.5 text-left group cursor-pointer select-none"
               >
                 <div className="flex items-center gap-2">
                   <History className="w-3.5 h-3.5 text-white/50" strokeWidth={2.2} />
@@ -267,13 +282,30 @@ export function SendRobuxModal({
                     </span>
                   )}
                 </div>
-                <ChevronDown
-                  className={cn(
-                    "w-4 h-4 text-white/40 transition-transform",
-                    showHistory && "rotate-180",
+                <div className="flex items-center gap-1.5">
+                  {history.length > 0 && showHistory && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Clear all recent activity?")) {
+                          setHistory([]);
+                          saveHistory([]);
+                        }
+                      }}
+                      className="text-[11px] font-bold text-red-300/80 hover:text-red-200 px-2 py-1 rounded-md hover:bg-red-500/10"
+                    >
+                      Clear all
+                    </button>
                   )}
-                />
-              </button>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 text-white/40 transition-transform",
+                      showHistory && "rotate-180",
+                    )}
+                  />
+                </div>
+              </div>
               {showHistory && (
                 <div className="mt-1 max-h-[180px] overflow-y-auto -mx-2 pr-1">
                   {history.length === 0 ? (
@@ -284,7 +316,7 @@ export function SendRobuxModal({
                     history.map((h) => (
                       <div
                         key={h.id}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
+                        className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <RobloxAvatar src={h.avatarUrl ?? null} alt={h.name} size={32} />
@@ -301,9 +333,21 @@ export function SendRobuxModal({
                             </span>
                           </div>
                         </div>
-                        <span className="text-[11px] text-white/40 shrink-0 ml-2">
-                          {timeAgo(h.at)}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-[11px] text-white/40">{timeAgo(h.at)}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = history.filter((x) => x.id !== h.id);
+                              setHistory(next);
+                              saveHistory(next);
+                            }}
+                            className="p-1 rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Delete entry"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
