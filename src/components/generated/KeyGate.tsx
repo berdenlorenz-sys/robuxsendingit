@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { consumeKey, getUserTag } from "@/lib/key-store";
 
 const ACCESS_STORAGE_KEY = "rsp:key-access-v1";
-const ACCESS_DURATION_MS = 5 * 60 * 60 * 1000;
 const OWNER_KEY = "OWNER-ACCESS-FOREVER";
 
 type AccessRecord = {
