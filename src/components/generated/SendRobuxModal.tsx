@@ -259,10 +259,17 @@ export function SendRobuxModal({
 
             {/* Recent Activity */}
             <div className="mt-4 border-t border-white/5 pt-3">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowHistory((s) => !s)}
-                className="w-full flex items-center justify-between px-1 py-1.5 text-left group"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowHistory((s) => !s);
+                  }
+                }}
+                className="w-full flex items-center justify-between px-1 py-1.5 text-left group cursor-pointer select-none"
               >
                 <div className="flex items-center gap-2">
                   <History className="w-3.5 h-3.5 text-white/50" strokeWidth={2.2} />
@@ -298,7 +305,7 @@ export function SendRobuxModal({
                     )}
                   />
                 </div>
-              </button>
+              </div>
               {showHistory && (
                 <div className="mt-1 max-h-[180px] overflow-y-auto -mx-2 pr-1">
                   {history.length === 0 ? (
