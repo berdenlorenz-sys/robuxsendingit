@@ -1,12 +1,11 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Check, Copy, KeyRound, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { consumeKey, getUserTag } from "@/lib/key-store";
 
 const ACCESS_STORAGE_KEY = "rsp:key-access-v1";
 const ACCESS_DURATION_MS = 5 * 60 * 60 * 1000;
-const DEMO_KEY = "RBX-ACCESS-2026";
 const OWNER_KEY = "OWNER-ACCESS-FOREVER";
-const VALID_KEYS = new Set([DEMO_KEY, "ROBLOX-VERIFY-5H", "MAGICPATH-5H"]);
 
 type AccessRecord = {
   mode: "normal" | "owner";
@@ -68,11 +67,11 @@ export function KeyGate({ children }: { children: ReactNode }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const grantAccess = (mode: AccessRecord["mode"]) => {
+  const grantAccess = (mode: AccessRecord["mode"], expiresAt: number | null) => {
     const record: AccessRecord = {
       mode,
       grantedAt: Date.now(),
-      expiresAt: mode === "owner" ? null : Date.now() + ACCESS_DURATION_MS,
+      expiresAt,
     };
     saveAccess(record);
     setStatus("success");
@@ -87,27 +86,34 @@ export function KeyGate({ children }: { children: ReactNode }) {
     setMessage("Verifying key...");
     window.setTimeout(() => {
       if (normalized === OWNER_KEY) {
-        grantAccess("owner");
+        grantAccess("owner", null);
         return;
       }
-      if (VALID_KEYS.has(normalized)) {
-        grantAccess("normal");
+      const result = consumeKey(normalized, getUserTag());
+      if (result.ok) {
+        grantAccess(
+          result.expiresAt === null ? "owner" : "normal",
+          result.expiresAt,
+        );
         return;
       }
       setStatus("error");
-      setMessage("Invalid key. Please try again.");
+      setMessage(
+        result.reason === "already_used_other"
+          ? "This key is already bound to another device."
+          : result.reason === "disabled"
+            ? "This key has been disabled."
+            : result.reason === "expired"
+              ? "This key has expired."
+              : "Invalid key. Please try again.",
+      );
     }, 900);
   };
 
-  const copyDemoKey = async () => {
-    setKeyValue(DEMO_KEY);
-    try {
-      await navigator.clipboard.writeText(DEMO_KEY);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      setCopied(false);
-    }
+  const openGetKey = () => {
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+    window.open("https://discord.gg/", "_blank", "noopener,noreferrer");
   };
 
   if (access) {
@@ -144,11 +150,11 @@ export function KeyGate({ children }: { children: ReactNode }) {
         <div className="p-5 sm:p-6">
           <button
             type="button"
-            onClick={copyDemoKey}
+            onClick={openGetKey}
             className="w-full h-12 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-black text-[14px] transition-all shadow-[0_0_28px_rgba(139,92,246,0.34)] active:scale-[0.99] flex items-center justify-center gap-2"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? "Key Copied" : "Get Key"}
+            {copied ? "Opening..." : "Get Key"}
           </button>
 
           <div className="mt-4 space-y-2">
