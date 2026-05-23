@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
 import { X, Search, Loader2, Check } from "lucide-react";
-import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
-import { searchRobloxUsersClient } from "@/lib/roblox-search-client";
+import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
 import { RobloxAvatar } from "./RobloxAvatar";
 import { formatFull } from "@/lib/format";
 
@@ -25,14 +23,14 @@ export function SettingsModal({
   user: CurrentUser;
   onSave: (next: { balance: number; user: CurrentUser }) => void;
 }) {
-  const search = useServerFn(searchRobloxUsers);
   const [balanceInput, setBalanceInput] = useState(String(balance));
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<RobloxUser[]>([]);
+  const [results, setResults] = useState<RobloxSearchUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [picked, setPicked] = useState<CurrentUser>(user);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -45,27 +43,36 @@ export function SettingsModal({
     }
   }, [open, balance, user]);
 
-  const runSearch = async () => {
+  // Debounced live suggestions
+  useEffect(() => {
     const q = query.trim();
-    if (q.length === 0 || loading) return;
-    setLoading(true);
-    setErrMsg(null);
-    setSearched(true);
-    try {
-      const res = await searchRobloxUsersClient(search, q);
+    if (q.length === 0) {
+      setResults([]);
+      setErrMsg(null);
+      setSearched(false);
+      setLoading(false);
+      abortRef.current?.abort();
+      return;
+    }
+    const t = setTimeout(async () => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      setLoading(true);
+      setErrMsg(null);
+      setSearched(true);
+      const res = await fetchRobloxSearch(q, ctrl.signal);
+      if (ctrl.signal.aborted) return;
       if (res.error) {
         setErrMsg(res.error);
         setResults([]);
       } else {
         setResults(res.users);
       }
-    } catch {
-      setErrMsg("Search failed");
-      setResults([]);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, 350);
+    return () => clearTimeout(t);
+  }, [query]);
 
   if (!open) return null;
 
@@ -134,14 +141,7 @@ export function SettingsModal({
             <label className="block text-[12px] font-bold text-white/70 mb-2 uppercase tracking-wider">
               Roblox username
             </label>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                runSearch();
-              }}
-              className="flex gap-2"
-            >
-              <div className="relative flex-1">
+            <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   value={query}
@@ -149,21 +149,13 @@ export function SettingsModal({
                     setQuery(e.target.value);
                     setErrMsg(null);
                   }}
-                  placeholder="Type a username, then Search"
+                  placeholder="Type a Roblox username"
                   className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-9 pr-9 text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {loading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
                 )}
-              </div>
-              <button
-                type="submit"
-                disabled={loading || query.trim().length === 0}
-                className="h-11 px-4 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 text-[13px] font-bold text-white"
-              >
-                Search
-              </button>
-            </form>
+            </div>
 
             {searched && errMsg && (
               <p className="text-[12px] text-red-400 mt-2">{errMsg}</p>
@@ -175,25 +167,25 @@ export function SettingsModal({
             {results.length > 0 && (
               <div className="mt-2 border border-white/10 rounded-lg overflow-hidden">
                 {results.map((u) => {
-                  const isPicked = picked.handle === `@${u.name}`;
+                  const isPicked = picked.handle === `@${u.username}`;
                   return (
                     <button
-                      key={u.id}
+                      key={u.userId}
                       onClick={() =>
                         setPicked({
-                          name: u.displayName || u.name,
-                          handle: `@${u.name}`,
-                          avatarUrl: u.avatarUrl,
+                          name: u.displayName || u.username,
+                          handle: `@${u.username}`,
+                          avatarUrl: u.avatar,
                         })
                       }
                       className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
                     >
-                      <RobloxAvatar src={u.avatarUrl} alt={u.name} size={32} />
+                      <RobloxAvatar src={u.avatar} alt={u.username} size={32} />
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-[13px] font-semibold text-white truncate">
-                          {u.displayName || u.name}
+                          {u.displayName || u.username}
                         </span>
-                        <span className="text-[11px] text-white/50 truncate">@{u.name}</span>
+                        <span className="text-[11px] text-white/50 truncate">@{u.username}</span>
                       </div>
                       {isPicked && <Check className="w-4 h-4 text-blue-400" />}
                     </button>
