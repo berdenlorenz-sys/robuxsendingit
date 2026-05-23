@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Check, Copy, KeyRound, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { consumeKey, getUserTag } from "@/lib/key-store";
+import { consumeKey, getUserTag, type KeyDuration } from "@/lib/key-store";
 
 const ACCESS_STORAGE_KEY = "rsp:key-access-v1";
 const OWNER_KEY = "OWNER-ACCESS-FOREVER";
@@ -53,10 +53,13 @@ const formatRemaining = (ms: number) => {
 export function KeyGate({ children }: { children: ReactNode }) {
   const [access, setAccess] = useState<AccessRecord | null>(readStoredAccess);
   const [keyValue, setKeyValue] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "starting" | "success" | "error">(
+    "idle",
+  );
   const [message, setMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [startingLabel, setStartingLabel] = useState("");
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -66,17 +69,29 @@ export function KeyGate({ children }: { children: ReactNode }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const grantAccess = (mode: AccessRecord["mode"], expiresAt: number | null) => {
+  const grantAccess = (
+    mode: AccessRecord["mode"],
+    expiresAt: number | null,
+    label: string,
+  ) => {
     const record: AccessRecord = {
       mode,
       grantedAt: Date.now(),
       expiresAt,
     };
-    saveAccess(record);
-    setStatus("success");
-    setMessage(mode === "owner" ? "Owner access granted" : "Access granted");
-    window.setTimeout(() => setAccess(record), 700);
+    setStartingLabel(label);
+    setStatus("starting");
+    setMessage(`${label} access is starting…`);
+    window.setTimeout(() => {
+      saveAccess(record);
+      setStatus("success");
+      setMessage(`${label} access granted`);
+      window.setTimeout(() => setAccess(record), 500);
+    }, 1600);
   };
+
+  const durationLabel = (d: KeyDuration) =>
+    d === "lifetime" ? "Lifetime" : d === "10h" ? "10 hours" : "5 hours";
 
   const handleVerify = () => {
     const normalized = keyValue.trim().toUpperCase();
@@ -85,7 +100,7 @@ export function KeyGate({ children }: { children: ReactNode }) {
     setMessage("Verifying key...");
     window.setTimeout(() => {
       if (normalized === OWNER_KEY) {
-        grantAccess("owner", null);
+        grantAccess("owner", null, "Owner");
         return;
       }
       const result = consumeKey(normalized, getUserTag());
@@ -93,6 +108,7 @@ export function KeyGate({ children }: { children: ReactNode }) {
         grantAccess(
           result.expiresAt === null ? "owner" : "normal",
           result.expiresAt,
+          durationLabel(result.key.duration),
         );
         return;
       }
@@ -127,6 +143,24 @@ export function KeyGate({ children }: { children: ReactNode }) {
     );
   }
 
+  if (status === "starting") {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-[#0d0d12] text-white flex items-center justify-center p-4 font-sans">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.22),transparent_40%)]" />
+        <div className="relative flex flex-col items-center gap-5 text-center">
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full border-4 border-violet-500/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-400 animate-spin" />
+          </div>
+          <div className="text-[20px] font-black tracking-tight">
+            {startingLabel} access is starting
+          </div>
+          <div className="text-[13px] text-white/55">Setting things up, please wait…</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0d0d12] text-white flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.18),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_55%)]" />
@@ -140,9 +174,6 @@ export function KeyGate({ children }: { children: ReactNode }) {
               <div className="text-[15px] font-black leading-tight">Key Required</div>
               <div className="text-[12px] text-white/45 leading-tight">Roblox access check</div>
             </div>
-          </div>
-          <div className="rounded-full border border-violet-300/20 bg-violet-400/10 px-2.5 py-1 text-[11px] font-extrabold text-violet-100">
-            5H
           </div>
         </div>
 

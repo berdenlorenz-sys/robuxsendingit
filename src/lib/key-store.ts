@@ -21,6 +21,9 @@ const DURATION_MS: Record<KeyDuration, number | null> = {
 
 const isBrowser = () => typeof window !== "undefined";
 
+/** Strip non-alphanumeric chars and uppercase for forgiving comparison. */
+const canon = (s: string) => s.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
 export const readKeys = (): GeneratedKey[] => {
   if (!isBrowser()) return [];
   try {
@@ -86,9 +89,9 @@ export type ConsumeResult =
  * expiration. Lifetime keys return expiresAt = null.
  */
 export const consumeKey = (rawCode: string, userTag: string): ConsumeResult => {
-  const code = rawCode.trim().toUpperCase();
+  const code = canon(rawCode);
   const all = readKeys();
-  const idx = all.findIndex((k) => k.code.toUpperCase() === code);
+  const idx = all.findIndex((k) => canon(k.code) === code);
   if (idx === -1) return { ok: false, reason: "not_found" };
   const key = all[idx];
   if (key.disabled) return { ok: false, reason: "disabled" };

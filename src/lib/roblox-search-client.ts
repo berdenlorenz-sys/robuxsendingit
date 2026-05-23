@@ -3,11 +3,12 @@ import type { RobloxUser } from "./roblox.functions";
 type SearchResult = { users: RobloxUser[]; error: string | null; retryAfterMs: number | null };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const REQUEST_COOLDOWN_MS = 7000;
 const cache = new Map<string, { at: number; result: SearchResult }>();
 let cooldownUntil = 0;
 
 export const MIN_QUERY_LENGTH = 3;
-export const MAX_SUGGESTIONS = 2;
+export const MAX_SUGGESTIONS = 1;
 
 export function getCooldownRemainingMs() {
   return Math.max(0, cooldownUntil - Date.now());
@@ -37,8 +38,10 @@ export async function searchRobloxUsersClient(
 
   if (res.retryAfterMs) {
     cooldownUntil = Date.now() + res.retryAfterMs;
-  } else if (!res.error) {
-    cache.set(key, { at: Date.now(), result: sliced });
+  } else {
+    // Always throttle requests to avoid Roblox rate-limit errors.
+    cooldownUntil = Date.now() + REQUEST_COOLDOWN_MS;
+    if (!res.error) cache.set(key, { at: Date.now(), result: sliced });
   }
   return sliced;
 }

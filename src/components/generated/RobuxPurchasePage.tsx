@@ -258,6 +258,47 @@ export const RobuxPurchasePage = () => {
               </div>
 
               <h2 className="text-xl font-bold mt-10">Robux packages</h2>
+
+              <div className="bg-[#18181b] rounded-2xl overflow-hidden border border-white/5">
+                <div className="flex flex-col">
+                  {[{
+                    amount: '1,500',
+                    orig: '1,200',
+                    bonus: '+ 300 more',
+                    price: '€17.99'
+                  }, {
+                    amount: '1,000',
+                    orig: '800',
+                    bonus: '+ 200 more',
+                    price: '€11.99'
+                  }, {
+                    amount: '500',
+                    orig: '400',
+                    bonus: '+ 100 more',
+                    price: '€5.99'
+                  }].map((pkg, i) => <div key={i} className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors border-t border-white/5 first:border-0 group">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <RobuxIcon size={24} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" />
+                          <span className="text-[24px] font-bold tracking-tight">{pkg.amount}</span>
+                        </div>
+                        <div className="flex items-center gap-1 relative px-0.5">
+                          <div className="absolute top-[52%] left-0 right-0 h-[2px] bg-[#a1a1aa] -translate-y-1/2 z-10" />
+                          <RobuxIcon size={18} className="text-[#a1a1aa] relative z-0" />
+                          <span className="text-[18px] text-[#a1a1aa] font-bold relative z-0 tracking-tight">{pkg.orig}</span>
+                        </div>
+                        <div className="flex items-center h-6 px-2 rounded-full bg-[rgba(208,217,251,0.12)] text-[rgb(247,247,248)] ml-1">
+                          <span className="text-[12px] leading-[12px] font-semibold whitespace-nowrap">
+                            {pkg.bonus}
+                          </span>
+                        </div>
+                      </div>
+                      <button className="bg-[#232428] hover:bg-[#2b2c31] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors min-w-[120px] text-center flex items-center justify-center">
+                        {pkg.price}
+                      </button>
+                    </div>)}
+                </div>
+              </div>
             </div>
           </div>
         </main>

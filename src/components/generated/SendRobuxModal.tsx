@@ -442,8 +442,8 @@ export function SendRobuxModal({
 
         {step === "done" && friend && (
           <div className="p-8 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
-              <Check className="w-9 h-9 text-white" strokeWidth={3} />
+            <div className="w-16 h-16 rounded-full bg-white/15 border border-white/15 flex items-center justify-center">
+              <Check className="w-9 h-9 text-white/85" strokeWidth={3} />
             </div>
             <div className="text-center">
               <div className="font-black text-[22px]">Robux Sent!</div>
@@ -451,6 +451,10 @@ export function SendRobuxModal({
                 You sent{" "}
                 <span className="font-bold text-white">{formatFull(amount)} Robux</span> to{" "}
                 <span className="font-bold text-white">{friend.handle}</span>
+              </p>
+              <p className="mt-4 text-[12px] text-white/55 leading-relaxed rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                <span className="font-bold text-white/75">Note:</span> Please allow 3–5 working
+                days for Robux delivery and processing.
               </p>
             </div>
             <button
