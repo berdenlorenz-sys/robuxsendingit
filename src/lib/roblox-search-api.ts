@@ -3,6 +3,11 @@ export type RobloxSearchUser = {
   username: string;
   displayName: string;
   avatar: string | null;
+  created?: string | null;
+  accountAgeDays?: number | null;
+  description?: string | null;
+  isBanned?: boolean;
+  hasVerifiedBadge?: boolean;
 };
 
 export type RobloxSearchResponse = {
