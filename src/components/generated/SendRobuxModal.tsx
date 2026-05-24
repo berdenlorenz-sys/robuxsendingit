@@ -282,11 +282,6 @@ export function SendRobuxModal({
                         )}
                       </span>
                       <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
-                      {joinedLabel && (
-                        <span className="text-[10px] text-white/40 truncate mt-0.5">
-                          {joinedLabel}
-                        </span>
-                      )}
                     </div>
                   </button>
                 );
@@ -398,8 +393,18 @@ export function SendRobuxModal({
             <div className="mb-3">
               <RobloxAvatar src={friend.avatarUrl} alt={friend.name} size={64} />
             </div>
-            <div className="text-[15px] font-semibold text-white/90">{friend.name}</div>
+            <div className="text-[15px] font-semibold text-white/90 flex items-center gap-1">
+              {friend.name}
+              {friend.hasVerifiedBadge && (
+                <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              )}
+            </div>
             <div className="text-[12px] text-white/50">{friend.handle}</div>
+            {friend.created && (
+              <div className="text-[11px] text-white/40 mt-0.5">
+                Joined {new Date(friend.created).getFullYear()}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-4 mb-5">
               <RobuxIcon size={28} className="text-white" />
               <span className="text-[36px] font-black tracking-tight">{formatFull(amount)}</span>
