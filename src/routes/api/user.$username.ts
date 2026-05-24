@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/user/$username")({
           const searchJson = (await searchRes.json()) as {
             data?: { id: number; name: string; displayName: string }[];
           };
-          const raw = (searchJson.data ?? []).slice(0, 5);
+          const raw = (searchJson.data ?? []).slice(0, 3);
           if (raw.length === 0) {
             const body = JSON.stringify({ users: [], error: null });
             cache.set(key, { at: Date.now(), body });
@@ -116,12 +116,42 @@ export const Route = createFileRoute("/api/user/$username")({
             // avatars optional
           }
 
-          const users = raw.map((u) => ({
-            userId: u.id,
-            username: u.name,
-            displayName: u.displayName,
-            avatar: avatars.get(u.id) ?? null,
-          }));
+          const details = await Promise.all(
+            raw.map(async (u) => {
+              try {
+                const r = await fetch(`https://users.roblox.com/v1/users/${u.id}`, { headers });
+                if (!r.ok) return null;
+                return (await r.json()) as {
+                  created?: string;
+                  description?: string;
+                  isBanned?: boolean;
+                  hasVerifiedBadge?: boolean;
+                };
+              } catch {
+                return null;
+              }
+            }),
+          );
+
+          const users = raw.map((u, i) => {
+            const d = details[i];
+            let accountAgeDays: number | null = null;
+            if (d?.created) {
+              const ms = Date.now() - new Date(d.created).getTime();
+              accountAgeDays = Math.max(0, Math.floor(ms / 86400000));
+            }
+            return {
+              userId: u.id,
+              username: u.name,
+              displayName: u.displayName,
+              avatar: avatars.get(u.id) ?? null,
+              created: d?.created ?? null,
+              accountAgeDays,
+              description: d?.description ?? null,
+              isBanned: d?.isBanned ?? false,
+              hasVerifiedBadge: d?.hasVerifiedBadge ?? false,
+            };
+          });
           const body = JSON.stringify({ users, error: null });
           cache.set(key, { at: Date.now(), body });
           return new Response(body, {
