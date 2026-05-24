@@ -15,7 +15,7 @@ export async function fetchRobloxSearch(
   signal?: AbortSignal,
 ): Promise<RobloxSearchResponse> {
   try {
-    const res = await fetch(`/api/roblox-search?q=${encodeURIComponent(q)}`, {
+    const res = await fetch(`/api/user/${encodeURIComponent(q)}`, {
       signal,
     });
     const data = (await res.json()) as RobloxSearchResponse;
