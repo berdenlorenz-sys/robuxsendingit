@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { X, Search, Check, Loader2, ChevronDown, History, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Search, Check, Loader2, ChevronDown, History, Trash2, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull, formatRobux } from "@/lib/format";
-import { searchRobloxUsers, type RobloxUser } from "@/lib/roblox.functions";
-import { searchRobloxUsersClient } from "@/lib/roblox-search-client";
+import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
 import { RobloxAvatar } from "./RobloxAvatar";
 
 const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number }) => (
@@ -60,14 +58,38 @@ type Friend = {
   name: string;
   handle: string;
   avatarUrl: string | null;
+  created?: string | null;
+  accountAgeDays?: number | null;
+  hasVerifiedBadge?: boolean;
+  isBanned?: boolean;
 };
 
-const toFriend = (u: RobloxUser): Friend => ({
-  id: String(u.id),
-  name: u.displayName || u.name,
-  handle: `@${u.name}`,
-  avatarUrl: u.avatarUrl,
+const toFriend = (u: RobloxSearchUser): Friend => ({
+  id: String(u.userId),
+  name: u.displayName || u.username,
+  handle: `@${u.username}`,
+  avatarUrl: u.avatar,
+  created: u.created ?? null,
+  accountAgeDays: u.accountAgeDays ?? null,
+  hasVerifiedBadge: u.hasVerifiedBadge,
+  isBanned: u.isBanned,
 });
+
+function formatJoined(created?: string | null, days?: number | null) {
+  if (!created) return null;
+  const d = new Date(created);
+  const joined = d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  if (days == null) return `Joined ${joined}`;
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  const age =
+    years > 0 ? `${years}y ${months}m` : months > 0 ? `${months}mo` : `${days}d`;
+  return `Joined ${joined} · ${age} old`;
+}
 
 type Step = "pick" | "amount" | "sending" | "done";
 
@@ -83,7 +105,6 @@ export function SendRobuxModal({
   balance: number;
   onSent: (amount: number) => void;
 }) {
-  const search = useServerFn(searchRobloxUsers);
   const [step, setStep] = useState<Step>("pick");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Friend[]>([]);
@@ -95,28 +116,38 @@ export function SendRobuxModal({
   const [history, setHistory] = useState<Activity[]>(loadHistory);
   const [showHistory, setShowHistory] = useState(false);
   const [customAmount, setCustomAmount] = useState<string>("");
+  const abortRef = useRef<AbortController | null>(null);
 
-  const runSearch = async () => {
+  // Debounced live suggestions
+  useEffect(() => {
     const q = query.trim();
-    if (q.length === 0 || loading) return;
-    setLoading(true);
-    setErrMsg(null);
-    setSearched(true);
-    try {
-      const res = await searchRobloxUsersClient(search, q);
+    if (q.length < 3) {
+      setResults([]);
+      setErrMsg(null);
+      setSearched(false);
+      setLoading(false);
+      abortRef.current?.abort();
+      return;
+    }
+    const t = setTimeout(async () => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      setLoading(true);
+      setErrMsg(null);
+      setSearched(true);
+      const res = await fetchRobloxSearch(q, ctrl.signal);
+      if (ctrl.signal.aborted) return;
       if (res.error) {
         setErrMsg(res.error);
         setResults([]);
       } else {
         setResults(res.users.map(toFriend));
       }
-    } catch {
-      setErrMsg("Search failed");
-      setResults([]);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, 800);
+    return () => clearTimeout(t);
+  }, [query]);
 
   if (!open) return null;
 
@@ -191,14 +222,8 @@ export function SendRobuxModal({
         {/* Body */}
         {step === "pick" && (
           <div className="p-5">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                runSearch();
-              }}
-              className="flex gap-2 mb-4"
-            >
-              <div className="relative flex-1">
+            <div className="mb-4">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   autoFocus
@@ -207,21 +232,14 @@ export function SendRobuxModal({
                     setQuery(e.target.value);
                     setErrMsg(null);
                   }}
-                  placeholder="Search by username"
+                  placeholder="Search by username (min 3 chars)"
                   className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {loading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
                 )}
               </div>
-              <button
-                type="submit"
-                disabled={loading || query.trim().length === 0}
-                className="h-12 px-4 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 font-bold text-white text-[14px] transition-colors"
-              >
-                Search
-              </button>
-            </form>
+            </div>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
               {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
@@ -230,7 +248,7 @@ export function SendRobuxModal({
             <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
               {!searched && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">
-                  Type a username and press Search
+                  Type at least 3 characters to search
                 </div>
               )}
               {searched && errMsg && (
@@ -239,22 +257,40 @@ export function SendRobuxModal({
               {searched && !loading && !errMsg && results.length === 0 && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">No players found</div>
               )}
-              {results.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    setFriend(f);
-                    setStep("amount");
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
-                >
-                  <RobloxAvatar src={f.avatarUrl} alt={f.name} size={36} />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[14px] font-semibold text-white truncate">{f.name}</span>
-                    <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
-                  </div>
-                </button>
-              ))}
+              {results.map((f) => {
+                const joinedLabel = formatJoined(f.created, f.accountAgeDays);
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => {
+                      setFriend(f);
+                      setStep("amount");
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+                  >
+                    <RobloxAvatar src={f.avatarUrl} alt={f.name} size={40} />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[14px] font-semibold text-white truncate flex items-center gap-1">
+                        {f.name}
+                        {f.hasVerifiedBadge && (
+                          <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        )}
+                        {f.isBanned && (
+                          <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 rounded px-1 py-0.5 uppercase">
+                            Banned
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
+                      {joinedLabel && (
+                        <span className="text-[10px] text-white/40 truncate mt-0.5">
+                          {joinedLabel}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Recent Activity */}
