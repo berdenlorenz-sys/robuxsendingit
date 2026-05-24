@@ -75,22 +75,6 @@ const toFriend = (u: RobloxSearchUser): Friend => ({
   isBanned: u.isBanned,
 });
 
-function formatJoined(created?: string | null, days?: number | null) {
-  if (!created) return null;
-  const d = new Date(created);
-  const joined = d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-  if (days == null) return `Joined ${joined}`;
-  const years = Math.floor(days / 365);
-  const months = Math.floor((days % 365) / 30);
-  const age =
-    years > 0 ? `${years}y ${months}m` : months > 0 ? `${months}mo` : `${days}d`;
-  return `Joined ${joined} · ${age} old`;
-}
-
 type Step = "pick" | "amount" | "sending" | "done";
 
 
@@ -257,9 +241,7 @@ export function SendRobuxModal({
               {searched && !loading && !errMsg && results.length === 0 && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">No players found</div>
               )}
-              {results.map((f) => {
-                const joinedLabel = formatJoined(f.created, f.accountAgeDays);
-                return (
+              {results.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => {
@@ -284,8 +266,7 @@ export function SendRobuxModal({
                       <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
                     </div>
                   </button>
-                );
-              })}
+              ))}
             </div>
 
             {/* Recent Activity */}
