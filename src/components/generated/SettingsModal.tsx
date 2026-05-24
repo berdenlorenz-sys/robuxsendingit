@@ -46,7 +46,7 @@ export function SettingsModal({
   // Debounced live suggestions
   useEffect(() => {
     const q = query.trim();
-    if (q.length === 0) {
+    if (q.length < 3) {
       setResults([]);
       setErrMsg(null);
       setSearched(false);
@@ -70,7 +70,7 @@ export function SettingsModal({
         setResults(res.users);
       }
       setLoading(false);
-    }, 350);
+    }, 800);
     return () => clearTimeout(t);
   }, [query]);
 
