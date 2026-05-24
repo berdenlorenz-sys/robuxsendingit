@@ -1,8 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Search, Loader2, Check } from "lucide-react";
+import { X, Search, Loader2, Check, BadgeCheck } from "lucide-react";
 import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
 import { RobloxAvatar } from "./RobloxAvatar";
 import { formatFull } from "@/lib/format";
+
+function formatJoined(created?: string | null, days?: number | null) {
+  if (!created) return null;
+  const d = new Date(created);
+  const joined = d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  if (days == null) return `Joined ${joined}`;
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  const age =
+    years > 0
+      ? `${years}y ${months}m`
+      : months > 0
+        ? `${months}mo`
+        : `${days}d`;
+  return `Joined ${joined} · ${age} old`;
+}
 
 export type CurrentUser = {
   name: string;
@@ -168,6 +188,7 @@ export function SettingsModal({
               <div className="mt-2 border border-white/10 rounded-lg overflow-hidden">
                 {results.map((u) => {
                   const isPicked = picked.handle === `@${u.username}`;
+                  const joinedLabel = formatJoined(u.created, u.accountAgeDays);
                   return (
                     <button
                       key={u.userId}
@@ -178,14 +199,27 @@ export function SettingsModal({
                           avatarUrl: u.avatar,
                         })
                       }
-                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-left border-b border-white/5 last:border-0"
                     >
-                      <RobloxAvatar src={u.avatar} alt={u.username} size={32} />
+                      <RobloxAvatar src={u.avatar} alt={u.username} size={40} />
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[13px] font-semibold text-white truncate">
+                        <span className="text-[13px] font-semibold text-white truncate flex items-center gap-1">
                           {u.displayName || u.username}
+                          {u.hasVerifiedBadge && (
+                            <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          )}
+                          {u.isBanned && (
+                            <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 rounded px-1 py-0.5 uppercase">
+                              Banned
+                            </span>
+                          )}
                         </span>
                         <span className="text-[11px] text-white/50 truncate">@{u.username}</span>
+                        {joinedLabel && (
+                          <span className="text-[10px] text-white/40 truncate mt-0.5">
+                            {joinedLabel}
+                          </span>
+                        )}
                       </div>
                       {isPicked && <Check className="w-4 h-4 text-blue-400" />}
                     </button>
