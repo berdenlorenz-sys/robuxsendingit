@@ -101,28 +101,6 @@ export function SendRobuxModal({
   const [showHistory, setShowHistory] = useState(false);
   const [customAmount, setCustomAmount] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
-
-  // Load default friends list when modal opens
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setFriendsLoading(true);
-    fetch("/api/friends")
-      .then((r) => r.json())
-      .then((data: { users?: RobloxSearchUser[] }) => {
-        if (cancelled) return;
-        setFriends((data.users ?? []).map(toFriend));
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setFriendsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
 
   // Debounced live suggestions
   useEffect(() => {
@@ -253,37 +231,15 @@ export function SendRobuxModal({
             </div>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
-              {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
+              {!searched ? "Search players" : `Results${results.length ? ` (${results.length})` : ""}`}
             </div>
 
             <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
-              {!searched && friendsLoading && friends.length === 0 && (
-                <div className="px-3 py-10 text-center text-white/50 text-sm flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading friends…
+              {!searched && (
+                <div className="px-3 py-10 text-center text-white/50 text-sm">
+                  Type at least 3 characters to search
                 </div>
               )}
-              {!searched &&
-                friends.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => {
-                      setFriend(f);
-                      setStep("amount");
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
-                  >
-                    <RobloxAvatar src={f.avatarUrl} alt={f.name} size={40} />
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-[14px] font-semibold text-white truncate flex items-center gap-1">
-                        {f.name}
-                        {f.hasVerifiedBadge && (
-                          <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        )}
-                      </span>
-                      <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
-                    </div>
-                  </button>
-                ))}
               {searched && errMsg && (
                 <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
               )}
