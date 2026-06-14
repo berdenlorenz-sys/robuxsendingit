@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRobloxSearchRouteImport } from './routes/api/roblox-search'
+import { Route as ApiFriendsRouteImport } from './routes/api/friends'
 import { Route as ApiUserUsernameRouteImport } from './routes/api/user.$username'
 
 const AdminRoute = AdminRouteImport.update({
@@ -29,6 +30,11 @@ const ApiRobloxSearchRoute = ApiRobloxSearchRouteImport.update({
   path: '/api/roblox-search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFriendsRoute = ApiFriendsRouteImport.update({
+  id: '/api/friends',
+  path: '/api/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserUsernameRoute = ApiUserUsernameRouteImport.update({
   id: '/api/user/$username',
   path: '/api/user/$username',
@@ -38,12 +44,14 @@ const ApiUserUsernameRoute = ApiUserUsernameRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/friends': typeof ApiFriendsRoute
   '/api/roblox-search': typeof ApiRobloxSearchRoute
   '/api/user/$username': typeof ApiUserUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/friends': typeof ApiFriendsRoute
   '/api/roblox-search': typeof ApiRobloxSearchRoute
   '/api/user/$username': typeof ApiUserUsernameRoute
 }
@@ -51,20 +59,38 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/friends': typeof ApiFriendsRoute
   '/api/roblox-search': typeof ApiRobloxSearchRoute
   '/api/user/$username': typeof ApiUserUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/api/roblox-search' | '/api/user/$username'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/api/friends'
+    | '/api/roblox-search'
+    | '/api/user/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/api/roblox-search' | '/api/user/$username'
-  id: '__root__' | '/' | '/admin' | '/api/roblox-search' | '/api/user/$username'
+  to:
+    | '/'
+    | '/admin'
+    | '/api/friends'
+    | '/api/roblox-search'
+    | '/api/user/$username'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/api/friends'
+    | '/api/roblox-search'
+    | '/api/user/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ApiFriendsRoute: typeof ApiFriendsRoute
   ApiRobloxSearchRoute: typeof ApiRobloxSearchRoute
   ApiUserUsernameRoute: typeof ApiUserUsernameRoute
 }
@@ -92,6 +118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRobloxSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/friends': {
+      id: '/api/friends'
+      path: '/api/friends'
+      fullPath: '/api/friends'
+      preLoaderRoute: typeof ApiFriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/user/$username': {
       id: '/api/user/$username'
       path: '/api/user/$username'
@@ -105,6 +138,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ApiFriendsRoute: ApiFriendsRoute,
   ApiRobloxSearchRoute: ApiRobloxSearchRoute,
   ApiUserUsernameRoute: ApiUserUsernameRoute,
 }
