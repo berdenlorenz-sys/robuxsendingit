@@ -129,7 +129,7 @@ export function SendRobuxModal({
         setResults(res.users.map(toFriend));
       }
       setLoading(false);
-    }, 300);
+    }, 800);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -231,7 +231,7 @@ export function SendRobuxModal({
             </div>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
-              {!searched ? "Search players" : `Results${results.length ? ` (${results.length})` : ""}`}
+              {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
             </div>
 
             <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
