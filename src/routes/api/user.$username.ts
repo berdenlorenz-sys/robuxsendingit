@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/user/$username")({
 
         try {
           const searchRes = await fetch(
-            `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`,
+            `https://users.roproxy.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`,
             { headers },
           );
           if (!searchRes.ok) {
@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/user/$username")({
           const avatars = new Map<number, string | null>();
           try {
             const thumbRes = await fetch(
-              `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${ids}&size=150x150&format=Png&isCircular=true`,
+              `https://thumbnails.roproxy.com/v1/users/avatar-headshot?userIds=${ids}&size=150x150&format=Png&isCircular=true`,
               { headers },
             );
             if (thumbRes.ok) {
@@ -119,7 +119,7 @@ export const Route = createFileRoute("/api/user/$username")({
           const details = await Promise.all(
             raw.map(async (u) => {
               try {
-                const r = await fetch(`https://users.roblox.com/v1/users/${u.id}`, { headers });
+                const r = await fetch(`https://users.roproxy.com/v1/users/${u.id}`, { headers });
                 if (!r.ok) return null;
                 return (await r.json()) as {
                   created?: string;
