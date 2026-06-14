@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Search, Check, Loader2, ChevronDown, History, Trash2, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatFull, formatRobux } from "@/lib/format";
+import { formatFull } from "@/lib/format";
 import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
 import { RobloxAvatar } from "./RobloxAvatar";
 
