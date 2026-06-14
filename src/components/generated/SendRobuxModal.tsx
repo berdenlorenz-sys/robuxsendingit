@@ -188,10 +188,15 @@ export function SendRobuxModal({
             <RobuxIcon size={18} className="text-white" />
             <span className="font-bold text-[15px]">Send Robux</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-white/90" title={formatFull(balance)}>
-              <RobuxIcon size={16} className="text-white" />
-              <span className="text-[13px] font-semibold">{formatRobux(balance)}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="flex items-center gap-1.5 text-white/90 bg-white/[0.04] border border-white/10 rounded-full px-2.5 py-1 max-w-[180px]"
+              title={`${formatFull(balance)} Robux`}
+            >
+              <RobuxIcon size={14} className="text-white shrink-0" />
+              <span className="text-[12.5px] font-bold tabular-nums truncate">
+                {formatFull(balance)}
+              </span>
             </div>
             <button
               onClick={handleClose}
