@@ -90,7 +90,7 @@ export function SettingsModal({
         setResults(res.users);
       }
       setLoading(false);
-    }, 800);
+    }, 500);
     return () => clearTimeout(t);
   }, [query]);
 
