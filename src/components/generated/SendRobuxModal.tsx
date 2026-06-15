@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { X, Search, Check, Loader2, ChevronDown, History, Trash2, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull } from "@/lib/format";
