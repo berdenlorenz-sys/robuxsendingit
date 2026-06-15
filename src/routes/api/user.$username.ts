@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/user/$username")({
 
         try {
           const searchRes = await fetch(
-            `https://users.roproxy.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`,
+            `https://roblox-solo-proxy-1.onrender.com/search-roblox?username=${encodeURIComponent(username)}`,
             { headers },
           );
           if (!searchRes.ok) {

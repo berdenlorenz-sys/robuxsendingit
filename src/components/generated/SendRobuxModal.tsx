@@ -129,7 +129,7 @@ export function SendRobuxModal({
         setResults(res.users.map(toFriend));
       }
       setLoading(false);
-    }, 300);
+    }, 500);
     return () => clearTimeout(t);
   }, [query]);
 
