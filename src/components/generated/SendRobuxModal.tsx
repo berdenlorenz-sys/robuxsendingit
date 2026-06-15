@@ -102,36 +102,30 @@ export function SendRobuxModal({
   const [customAmount, setCustomAmount] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
 
-  // Debounced live suggestions
-  useEffect(() => {
+  const runSearch = async () => {
     const q = query.trim();
     if (q.length < 3) {
+      setErrMsg("Enter at least 3 characters");
       setResults([]);
-      setErrMsg(null);
-      setSearched(false);
-      setLoading(false);
-      abortRef.current?.abort();
+      setSearched(true);
       return;
     }
-    const t = setTimeout(async () => {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-      setLoading(true);
-      setErrMsg(null);
-      setSearched(true);
-      const res = await fetchRobloxSearch(q, ctrl.signal);
-      if (ctrl.signal.aborted) return;
-      if (res.error) {
-        setErrMsg(res.error);
-        setResults([]);
-      } else {
-        setResults(res.users.map(toFriend));
-      }
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(t);
-  }, [query]);
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLoading(true);
+    setErrMsg(null);
+    setSearched(true);
+    const res = await fetchRobloxSearch(q, ctrl.signal);
+    if (ctrl.signal.aborted) return;
+    if (res.error) {
+      setErrMsg(res.error);
+      setResults([]);
+    } else {
+      setResults(res.users.slice(0, 1).map(toFriend));
+    }
+    setLoading(false);
+  };
 
   if (!open) return null;
 
@@ -211,8 +205,8 @@ export function SendRobuxModal({
         {/* Body */}
         {step === "pick" && (
           <div className="p-5">
-            <div className="mb-4">
-              <div className="relative">
+            <div className="mb-4 flex items-stretch gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   autoFocus
@@ -221,57 +215,68 @@ export function SendRobuxModal({
                     setQuery(e.target.value);
                     setErrMsg(null);
                   }}
-                  placeholder="Search by username (min 3 chars)"
-                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runSearch();
+                    }
+                  }}
+                  placeholder="Search by username"
+                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-3 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
-                {loading && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
-                )}
               </div>
+              <button
+                type="button"
+                onClick={runSearch}
+                disabled={loading}
+                className="h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[14px] font-bold border border-blue-400/40 shadow-[0_2px_0_rgba(0,0,0,0.3)] flex items-center gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                Search
+              </button>
             </div>
 
-            <div className="text-[14px] font-extrabold text-white mb-2">
-              {!searched ? "Search players" : `Results${results.length ? ` (${results.length})` : ""}`}
-            </div>
-
-            <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
+            <div className="min-h-[180px] flex items-start justify-center">
               {!searched && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm">
-                  Type at least 3 characters to search
+                  Enter a username and tap Search
                 </div>
               )}
-              {searched && errMsg && (
-                <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
+              {searched && loading && (
+                <div className="px-3 py-10 flex items-center gap-2 text-white/60 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Searching…
+                </div>
+              )}
+              {searched && !loading && errMsg && (
+                <div className="px-3 py-6 text-center text-red-400 text-sm">{errMsg}</div>
               )}
               {searched && !loading && !errMsg && results.length === 0 && (
-                <div className="px-3 py-10 text-center text-white/50 text-sm">No players found</div>
+                <div className="px-3 py-10 text-center text-white/50 text-sm">User not found</div>
               )}
-              {results.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => {
-                      setFriend(f);
-                      setStep("amount");
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
-                  >
-                    <RobloxAvatar src={f.avatarUrl} alt={f.name} size={40} />
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-[14px] font-semibold text-white truncate flex items-center gap-1">
-                        {f.name}
-                        {f.hasVerifiedBadge && (
-                          <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        )}
-                        {f.isBanned && (
-                          <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 rounded px-1 py-0.5 uppercase">
-                            Banned
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
-                    </div>
-                  </button>
-              ))}
+              {searched && !loading && !errMsg && results.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFriend(results[0]);
+                    setStep("amount");
+                  }}
+                  className="w-full max-w-[320px] mx-auto mt-2 flex flex-col items-center gap-2 p-5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-blue-500/60 hover:bg-white/[0.06] transition-colors"
+                >
+                  <RobloxAvatar src={results[0].avatarUrl} alt={results[0].name} size={72} />
+                  <div className="text-[15px] font-bold text-white flex items-center gap-1">
+                    {results[0].name}
+                    {results[0].hasVerifiedBadge && (
+                      <BadgeCheck className="w-4 h-4 text-blue-400" />
+                    )}
+                  </div>
+                  <div className="text-[12px] text-white/50">{results[0].handle}</div>
+                  <div className="text-[11px] text-white/40 font-mono">ID: {results[0].id}</div>
+                </button>
+              )}
             </div>
 
             {/* Recent Activity */}
