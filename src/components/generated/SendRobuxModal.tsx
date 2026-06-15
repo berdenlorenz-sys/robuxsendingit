@@ -115,6 +115,7 @@ export function SendRobuxModal({
     abortRef.current = ctrl;
     setLoading(true);
     setErrMsg(null);
+    setResults([]);
     setSearched(true);
     const res = await fetchRobloxSearch(q, ctrl.signal);
     if (ctrl.signal.aborted) return;
