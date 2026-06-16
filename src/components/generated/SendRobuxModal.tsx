@@ -233,11 +233,16 @@ export function SendRobuxModal({
                 className="h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[14px] font-bold border border-blue-400/40 shadow-[0_2px_0_rgba(0,0,0,0.3)] flex items-center gap-2"
               >
                 {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Searching...
+                  </>
                 ) : (
-                  <Search className="w-4 h-4" />
+                  <>
+                    <Search className="w-4 h-4" />
+                    Search
+                  </>
                 )}
-                Search
               </button>
             </div>
 
@@ -252,11 +257,13 @@ export function SendRobuxModal({
                   <Loader2 className="w-4 h-4 animate-spin" /> Searching…
                 </div>
               )}
-              {searched && !loading && errMsg && (
+              {searched && !loading && errMsg && errMsg !== "Connection Error" && (
                 <div className="px-3 py-6 text-center text-red-400 text-sm">{errMsg}</div>
               )}
-              {searched && !loading && !errMsg && results.length === 0 && (
-                <div className="px-3 py-10 text-center text-white/50 text-sm">User not found</div>
+              {searched && !loading && (errMsg === "Connection Error" || (!errMsg && results.length === 0)) && (
+                <div className="px-3 py-10 text-center text-white/50 text-sm">
+                  {errMsg === "Connection Error" ? "Connection Error" : "User not found"}
+                </div>
               )}
               {searched && !loading && !errMsg && results.length > 0 && (
                 <button
