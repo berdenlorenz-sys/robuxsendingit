@@ -75,10 +75,7 @@ export const Route = createFileRoute("/api/user/$username")({
           if (!searchRes.ok) {
             return json(
               {
-                error:
-                  searchRes.status === 429
-                    ? "Roblox rate limit, try again shortly"
-                    : `Roblox search failed (${searchRes.status})`,
+                error: "User not found",
                 users: [],
               },
               searchRes.status === 429 ? 429 : 502,
