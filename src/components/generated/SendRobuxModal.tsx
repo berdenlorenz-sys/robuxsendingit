@@ -124,36 +124,28 @@ export function SendRobuxModal({
     };
   }, [open]);
 
-  // Debounced live suggestions
-  useEffect(() => {
+  const runSearch = async () => {
     const q = query.trim();
     if (q.length < 3) {
-      setResults([]);
-      setErrMsg(null);
-      setSearched(false);
-      setLoading(false);
-      abortRef.current?.abort();
+      setErrMsg("Enter at least 3 characters");
       return;
     }
-    const t = setTimeout(async () => {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-      setLoading(true);
-      setErrMsg(null);
-      setSearched(true);
-      const res = await fetchRobloxSearch(q, ctrl.signal);
-      if (ctrl.signal.aborted) return;
-      if (res.error) {
-        setErrMsg(res.error);
-        setResults([]);
-      } else {
-        setResults(res.users.map(toFriend));
-      }
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [query]);
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLoading(true);
+    setErrMsg(null);
+    setSearched(true);
+    const res = await fetchRobloxSearch(q, ctrl.signal);
+    if (ctrl.signal.aborted) return;
+    if (res.error) {
+      setErrMsg(res.error);
+      setResults([]);
+    } else {
+      setResults(res.users.map(toFriend));
+    }
+    setLoading(false);
+  };
 
   if (!open) return null;
 
