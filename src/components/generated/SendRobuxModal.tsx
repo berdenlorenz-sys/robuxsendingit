@@ -225,8 +225,8 @@ export function SendRobuxModal({
         {/* Body */}
         {step === "pick" && (
           <div className="p-5">
-            <div className="mb-4">
-              <div className="relative">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   autoFocus
@@ -235,13 +235,29 @@ export function SendRobuxModal({
                     setQuery(e.target.value);
                     setErrMsg(null);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runSearch();
+                    }
+                  }}
                   placeholder="Search by username (min 3 chars)"
-                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-10 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
+                  className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-3 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
-                {loading && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />
-                )}
               </div>
+              <button
+                type="button"
+                onClick={runSearch}
+                disabled={loading || query.trim().length < 3}
+                className="h-12 px-4 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 text-white text-[14px] font-bold flex items-center gap-1.5 transition-colors"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                Search
+              </button>
             </div>
 
             <div className="text-[14px] font-extrabold text-white mb-2">
