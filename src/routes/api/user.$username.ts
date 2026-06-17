@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/user/$username")({
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
           "unknown";
         if (!checkRate(ip)) {
-          return json({ error: "Rate limit exceeded", users: [] }, 429, {
+          return json({ error: "User not found", users: [] }, 429, {
             "Retry-After": "10",
           });
         }
