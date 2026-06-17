@@ -142,3 +142,18 @@
     color: var(--color-foreground);
   }
 }
+
+.scrollbar-blend {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.scrollbar-blend::-webkit-scrollbar {
+  width: 5px;
+}
+.scrollbar-blend::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-blend::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
