@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/user/$username")({
           const searchJson = (await searchRes.json()) as {
             data?: { id: number; name: string; displayName: string }[];
           };
-          const raw = (searchJson.data ?? []).slice(0, 3);
+          const raw = (searchJson.data ?? []).slice(0, 8);
           if (raw.length === 0) {
             const body = JSON.stringify({ users: [], error: null });
             cache.set(key, { at: Date.now(), body });
