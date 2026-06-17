@@ -1,20 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const FRIENDS: { username: string; displayName: string }[] = [
-  { username: "jandel", displayName: "jandel" },
-  { username: "Tijoro", displayName: "Tijoro" },
-  { username: "TJlmt", displayName: "TJlmt" },
-  { username: "Centaar", displayName: "Zeal" },
-  { username: "Preston_Username", displayName: "Preston" },
   { username: "Roblox", displayName: "Roblox" },
-  { username: "Changmath", displayName: "Muva" },
-  { username: "Olix", displayName: "Olix" },
-  { username: "H3ichou", displayName: "H3ichou" },
-  { username: "brezyxs", displayName: "bri" },
-  { username: "MyUsernamesThis", displayName: "Bacon" },
-  { username: "sciGazer", displayName: "sci" },
-  { username: "Enikuhhyeah", displayName: "Enikuhhyeah" },
   { username: "builderman", displayName: "builderman" },
+  { username: "Jandel", displayName: "Jandel" },
+  { username: "Tofuu", displayName: "Tofuu" },
+  { username: "Preston", displayName: "Preston" },
+  { username: "Linkmon99", displayName: "Linkmon99" },
+  { username: "Tanqr", displayName: "Tanqr" },
+  { username: "KreekCraft", displayName: "KreekCraft" },
+  { username: "Flamingo", displayName: "Flamingo" },
+  { username: "Denis", displayName: "Denis" },
+  { username: "Sketch", displayName: "Sketch" },
+  { username: "MyUsernamesThis", displayName: "Bacon" },
+  { username: "Telamon", displayName: "Telamon" },
+  { username: "Stickmasterluke", displayName: "Stickmasterluke" },
 ];
 
 const CORS = {
