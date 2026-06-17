@@ -256,7 +256,7 @@ export function SendRobuxModal({
               {!searched ? "My friends" : `Results${results.length ? ` (${results.length})` : ""}`}
             </div>
 
-            <div className="max-h-[320px] overflow-y-auto -mx-2 pr-1 min-h-[180px]">
+            <div className="max-h-[320px] overflow-y-auto scrollbar-blend -mx-2 pr-1 min-h-[180px]">
               {!searched && friendsLoading && friends.length === 0 && (
                 <div className="px-3 py-10 text-center text-white/50 text-sm flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading friends…
@@ -368,7 +368,7 @@ export function SendRobuxModal({
                 </div>
               </div>
               {showHistory && (
-                <div className="mt-1 max-h-[180px] overflow-y-auto -mx-2 pr-1">
+                <div className="mt-1 max-h-[180px] overflow-y-auto scrollbar-blend -mx-2 pr-1">
                   {history.length === 0 ? (
                     <div className="px-3 py-6 text-center text-white/40 text-[12px]">
                       No recent transactions
