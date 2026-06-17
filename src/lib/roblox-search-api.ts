@@ -25,7 +25,7 @@ export async function fetchRobloxSearch(
     });
     const data = (await res.json()) as RobloxSearchResponse;
     if (!res.ok && !data.error) {
-      return { users: [], error: `Search failed (${res.status})` };
+      return { users: [], error: "User not found" };
     }
     return data;
   } catch (e) {

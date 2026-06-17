@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/user/$username")({
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
           "unknown";
         if (!checkRate(ip)) {
-          return json({ error: "Rate limit exceeded", users: [] }, 429, {
+          return json({ error: "User not found", users: [] }, 429, {
             "Retry-After": "10",
           });
         }
@@ -75,10 +75,7 @@ export const Route = createFileRoute("/api/user/$username")({
           if (!searchRes.ok) {
             return json(
               {
-                error:
-                  searchRes.status === 429
-                    ? "Roblox rate limit, try again shortly"
-                    : `Roblox search failed (${searchRes.status})`,
+                error: "User not found",
                 users: [],
               },
               searchRes.status === 429 ? 429 : 502,
@@ -160,7 +157,7 @@ export const Route = createFileRoute("/api/user/$username")({
           });
         } catch (e) {
           console.error("user search error", e);
-          return json({ error: "Failed to reach Roblox", users: [] }, 502);
+          return json({ error: "User not found", users: [] }, 502);
         }
       },
     },
