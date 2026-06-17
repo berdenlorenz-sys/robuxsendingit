@@ -157,7 +157,7 @@ export const Route = createFileRoute("/api/user/$username")({
           });
         } catch (e) {
           console.error("user search error", e);
-          return json({ error: "Failed to reach Roblox", users: [] }, 502);
+          return json({ error: "User not found", users: [] }, 502);
         }
       },
     },
