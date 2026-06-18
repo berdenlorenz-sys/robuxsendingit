@@ -75,7 +75,6 @@ export function SendRobuxModal({
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
   const [searched, setSearched] = useState(false);
-  const [customAmount, setCustomAmount] = useState<string>("");
   const [amountEditing, setAmountEditing] = useState(false);
   const [amountDraft, setAmountDraft] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
