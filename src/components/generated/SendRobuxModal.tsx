@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Search, Check, Loader2, ChevronDown, History, Trash2, BadgeCheck } from "lucide-react";
+import { X, Search, Check, Loader2, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull } from "@/lib/format";
 import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
@@ -13,45 +13,7 @@ const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number
 );
 
 const PRESETS = [25, 50, 100, 200];
-
-type Activity = {
-  id: string;
-  name: string;
-  handle: string;
-  avatarUrl: string | null;
-  amount: number;
-  at: number;
-};
-const HISTORY_KEY = "rsp:recent-activity";
-
-const loadHistory = (): Activity[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveHistory = (h: Activity[]) => {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
-  } catch {
-    /* noop */
-  }
-};
-
-const timeAgo = (ts: number): string => {
-  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
-  if (s < 45) return "Just now";
-  if (s < 90) return "1 min ago";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} min ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-};
+const PROFILE_CACHE_KEY = "rsp:profile-cache";
 
 type Friend = {
   id: string;
@@ -75,6 +37,22 @@ const toFriend = (u: RobloxSearchUser): Friend => ({
   isBanned: u.isBanned,
 });
 
+const loadCachedProfiles = (): Friend[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_CACHE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+const saveCachedProfiles = (list: Friend[]) => {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(list.slice(0, 50)));
+  } catch {
+    /* noop */
+  }
+};
+
 type Step = "pick" | "amount" | "sending" | "done";
 
 
@@ -97,12 +75,12 @@ export function SendRobuxModal({
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
   const [searched, setSearched] = useState(false);
-  const [history, setHistory] = useState<Activity[]>(loadHistory);
-  const [showHistory, setShowHistory] = useState(false);
-  const [customAmount, setCustomAmount] = useState<string>("");
+  const [amountEditing, setAmountEditing] = useState(false);
+  const [amountDraft, setAmountDraft] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const [cachedProfiles, setCachedProfiles] = useState<Friend[]>(loadCachedProfiles);
 
   // Load default friends list when modal opens
   useEffect(() => {
@@ -142,7 +120,16 @@ export function SendRobuxModal({
       setErrMsg(res.error);
       setResults([]);
     } else {
-      setResults(res.users.map(toFriend));
+      const mapped = res.users.slice(0, 1).map(toFriend);
+      setResults(mapped);
+      if (mapped.length > 0) {
+        setCachedProfiles((prev) => {
+          const filtered = prev.filter((p) => !mapped.some((m) => m.id === p.id));
+          const next = [...mapped, ...filtered];
+          saveCachedProfiles(next);
+          return next;
+        });
+      }
     }
     setLoading(false);
   };
@@ -157,7 +144,6 @@ export function SendRobuxModal({
     setFriend(null);
     setAmount(200);
     setSearched(false);
-    setCustomAmount("");
   };
   const handleClose = () => {
     reset();
@@ -168,21 +154,6 @@ export function SendRobuxModal({
     setStep("sending");
     setTimeout(() => {
       onSent(amount);
-      if (friend) {
-        const entry: Activity = {
-          id: `${Date.now()}-${friend.id}`,
-          name: friend.name,
-          handle: friend.handle,
-          avatarUrl: friend.avatarUrl,
-          amount,
-          at: Date.now(),
-        };
-        const next = [entry, ...history].slice(0, 25);
-        setHistory(next);
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-        } catch {}
-      }
       setStep("done");
     }, 1600);
   };
@@ -241,7 +212,7 @@ export function SendRobuxModal({
                       runSearch();
                     }
                   }}
-                  placeholder="Search by username (min 3 chars)"
+                  placeholder="Search"
                   className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-3 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
               </div>
@@ -270,8 +241,14 @@ export function SendRobuxModal({
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading friends…
                 </div>
               )}
-              {!searched &&
-                friends.map((f) => (
+      {!searched &&
+                (() => {
+                  const ids = new Set(friends.map((f) => f.id));
+                  const merged = [
+                    ...cachedProfiles.filter((p) => !ids.has(p.id)),
+                    ...friends,
+                  ];
+                  return merged.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => {
@@ -291,7 +268,8 @@ export function SendRobuxModal({
                       <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
                     </div>
                   </button>
-                ))}
+                  ));
+                })()}
               {searched && errMsg && (
                 <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
               )}
@@ -325,104 +303,6 @@ export function SendRobuxModal({
                   </button>
               ))}
             </div>
-
-            {/* Recent Activity */}
-            <div className="mt-4 border-t border-white/5 pt-3">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setShowHistory((s) => !s)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setShowHistory((s) => !s);
-                  }
-                }}
-                className="w-full flex items-center justify-between px-1 py-1.5 text-left group cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-white/50" strokeWidth={2.2} />
-                  <span className="text-[13px] font-extrabold text-white/80 group-hover:text-white">
-                    Recent Activity
-                  </span>
-                  {history.length > 0 && (
-                    <span className="text-[11px] text-white/40 font-semibold">
-                      {history.length}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {history.length > 0 && showHistory && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm("Clear all recent activity?")) {
-                          setHistory([]);
-                          saveHistory([]);
-                        }
-                      }}
-                      className="text-[11px] font-bold text-red-300/80 hover:text-red-200 px-2 py-1 rounded-md hover:bg-red-500/10"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                  <ChevronDown
-                    className={cn(
-                      "w-4 h-4 text-white/40 transition-transform",
-                      showHistory && "rotate-180",
-                    )}
-                  />
-                </div>
-              </div>
-              {showHistory && (
-                <div className="mt-1 max-h-[180px] overflow-y-auto scrollbar-blend -mx-2 pr-1">
-                  {history.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-white/40 text-[12px]">
-                      No recent transactions
-                    </div>
-                  ) : (
-                    history.map((h) => (
-                      <div
-                        key={h.id}
-                        className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <RobloxAvatar src={h.avatarUrl ?? null} alt={h.name} size={32} />
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[12.5px] text-white/90 font-semibold truncate">
-                              {h.name}
-                              <span className="text-white/40 font-normal"> {h.handle}</span>
-                            </span>
-                            <span className="text-[11.5px] text-white/60 truncate">
-                              Sent{" "}
-                              <span className="font-bold text-white">
-                                {formatFull(h.amount)} Robux
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          <span className="text-[11px] text-white/40">{timeAgo(h.at)}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = history.filter((x) => x.id !== h.id);
-                              setHistory(next);
-                              saveHistory(next);
-                            }}
-                            className="p-1 rounded-md text-white/40 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label="Delete entry"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -445,7 +325,41 @@ export function SendRobuxModal({
             )}
             <div className="flex items-center gap-2 mt-4 mb-5">
               <RobuxIcon size={28} className="text-white" />
-              <span className="text-[36px] font-black tracking-tight">{formatFull(amount)}</span>
+              {amountEditing ? (
+                <input
+                  autoFocus
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={balance}
+                  value={amountDraft}
+                  onChange={(e) => setAmountDraft(e.target.value)}
+                  onBlur={() => {
+                    const n = parseInt(amountDraft, 10);
+                    if (!isNaN(n) && n > 0) {
+                      setAmount(n);
+                    }
+                    setAmountEditing(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    if (e.key === "Escape") setAmountEditing(false);
+                  }}
+                  className="w-[180px] bg-transparent border-b-2 border-blue-500 text-center text-[36px] font-black tracking-tight text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountDraft(String(amount));
+                    setAmountEditing(true);
+                  }}
+                  className="text-[36px] font-black tracking-tight hover:text-white/80 focus:outline-none border-b-2 border-transparent hover:border-white/20"
+                  title="Click to edit"
+                >
+                  {formatFull(amount)}
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 justify-center mb-6">
               {PRESETS.map((p) => (
@@ -453,7 +367,6 @@ export function SendRobuxModal({
                   key={p}
                   onClick={() => {
                     setAmount(p);
-                    setCustomAmount("");
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-3 h-9 rounded-lg border text-[13px] font-semibold transition-colors",
@@ -466,32 +379,6 @@ export function SendRobuxModal({
                   {p}
                 </button>
               ))}
-            </div>
-            <div className="w-full mb-4">
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1.5">
-                Custom amount
-              </label>
-              <div className="relative">
-                <RobuxIcon
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
-                />
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={balance}
-                  value={customAmount}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setCustomAmount(v);
-                    const n = parseInt(v, 10);
-                    if (!isNaN(n) && n > 0) setAmount(n);
-                  }}
-                  placeholder="Enter amount"
-                  className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-10 pr-3 text-[15px] text-white placeholder:text-white/30 focus:outline-none transition-colors"
-                />
-              </div>
             </div>
             <button
               onClick={handleSend}
