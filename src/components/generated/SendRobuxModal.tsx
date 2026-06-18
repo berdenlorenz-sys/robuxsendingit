@@ -327,7 +327,42 @@ export function SendRobuxModal({
             )}
             <div className="flex items-center gap-2 mt-4 mb-5">
               <RobuxIcon size={28} className="text-white" />
-              <span className="text-[36px] font-black tracking-tight">{formatFull(amount)}</span>
+              {amountEditing ? (
+                <input
+                  autoFocus
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={balance}
+                  value={amountDraft}
+                  onChange={(e) => setAmountDraft(e.target.value)}
+                  onBlur={() => {
+                    const n = parseInt(amountDraft, 10);
+                    if (!isNaN(n) && n > 0) {
+                      setAmount(n);
+                      setCustomAmount(String(n));
+                    }
+                    setAmountEditing(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    if (e.key === "Escape") setAmountEditing(false);
+                  }}
+                  className="w-[180px] bg-transparent border-b-2 border-blue-500 text-center text-[36px] font-black tracking-tight text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountDraft(String(amount));
+                    setAmountEditing(true);
+                  }}
+                  className="text-[36px] font-black tracking-tight hover:text-white/80 focus:outline-none border-b-2 border-transparent hover:border-white/20"
+                  title="Click to edit"
+                >
+                  {formatFull(amount)}
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 justify-center mb-6">
               {PRESETS.map((p) => (
@@ -348,32 +383,6 @@ export function SendRobuxModal({
                   {p}
                 </button>
               ))}
-            </div>
-            <div className="w-full mb-4">
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-white/50 mb-1.5">
-                Custom amount
-              </label>
-              <div className="relative">
-                <RobuxIcon
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
-                />
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={balance}
-                  value={customAmount}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setCustomAmount(v);
-                    const n = parseInt(v, 10);
-                    if (!isNaN(n) && n > 0) setAmount(n);
-                  }}
-                  placeholder="Enter amount"
-                  className="w-full h-11 bg-white/[0.04] border border-white/10 focus:border-blue-500 rounded-lg pl-10 pr-3 text-[15px] text-white placeholder:text-white/30 focus:outline-none transition-colors"
-                />
-              </div>
             </div>
             <button
               onClick={handleSend}
