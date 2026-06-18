@@ -214,7 +214,7 @@ export function SendRobuxModal({
                       runSearch();
                     }
                   }}
-                  placeholder="Search by username (min 3 chars)"
+                  placeholder="Search"
                   className="w-full h-12 bg-transparent border-2 border-blue-500 rounded-xl pl-10 pr-3 text-[15px] text-white placeholder:text-white/40 focus:outline-none"
                 />
               </div>
