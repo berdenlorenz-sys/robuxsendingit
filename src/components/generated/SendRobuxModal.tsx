@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Search, Check, Loader2, ChevronDown, History, Trash2, BadgeCheck } from "lucide-react";
+import { X, Search, Check, Loader2, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFull } from "@/lib/format";
 import { fetchRobloxSearch, type RobloxSearchUser } from "@/lib/roblox-search-api";
@@ -13,45 +13,7 @@ const RobuxIcon = ({ className, size = 16 }: { className?: string; size?: number
 );
 
 const PRESETS = [25, 50, 100, 200];
-
-type Activity = {
-  id: string;
-  name: string;
-  handle: string;
-  avatarUrl: string | null;
-  amount: number;
-  at: number;
-};
-const HISTORY_KEY = "rsp:recent-activity";
-
-const loadHistory = (): Activity[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveHistory = (h: Activity[]) => {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
-  } catch {
-    /* noop */
-  }
-};
-
-const timeAgo = (ts: number): string => {
-  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
-  if (s < 45) return "Just now";
-  if (s < 90) return "1 min ago";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} min ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-};
+const PROFILE_CACHE_KEY = "rsp:profile-cache";
 
 type Friend = {
   id: string;
@@ -75,6 +37,22 @@ const toFriend = (u: RobloxSearchUser): Friend => ({
   isBanned: u.isBanned,
 });
 
+const loadCachedProfiles = (): Friend[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_CACHE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+const saveCachedProfiles = (list: Friend[]) => {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(list.slice(0, 50)));
+  } catch {
+    /* noop */
+  }
+};
+
 type Step = "pick" | "amount" | "sending" | "done";
 
 
@@ -97,12 +75,13 @@ export function SendRobuxModal({
   const [friend, setFriend] = useState<Friend | null>(null);
   const [amount, setAmount] = useState<number>(200);
   const [searched, setSearched] = useState(false);
-  const [history, setHistory] = useState<Activity[]>(loadHistory);
-  const [showHistory, setShowHistory] = useState(false);
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [amountEditing, setAmountEditing] = useState(false);
+  const [amountDraft, setAmountDraft] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const [cachedProfiles, setCachedProfiles] = useState<Friend[]>(loadCachedProfiles);
 
   // Load default friends list when modal opens
   useEffect(() => {
@@ -142,7 +121,16 @@ export function SendRobuxModal({
       setErrMsg(res.error);
       setResults([]);
     } else {
-      setResults(res.users.map(toFriend));
+      const mapped = res.users.slice(0, 1).map(toFriend);
+      setResults(mapped);
+      if (mapped.length > 0) {
+        setCachedProfiles((prev) => {
+          const filtered = prev.filter((p) => !mapped.some((m) => m.id === p.id));
+          const next = [...mapped, ...filtered];
+          saveCachedProfiles(next);
+          return next;
+        });
+      }
     }
     setLoading(false);
   };
@@ -168,21 +156,6 @@ export function SendRobuxModal({
     setStep("sending");
     setTimeout(() => {
       onSent(amount);
-      if (friend) {
-        const entry: Activity = {
-          id: `${Date.now()}-${friend.id}`,
-          name: friend.name,
-          handle: friend.handle,
-          avatarUrl: friend.avatarUrl,
-          amount,
-          at: Date.now(),
-        };
-        const next = [entry, ...history].slice(0, 25);
-        setHistory(next);
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-        } catch {}
-      }
       setStep("done");
     }, 1600);
   };
