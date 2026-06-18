@@ -243,8 +243,14 @@ export function SendRobuxModal({
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading friends…
                 </div>
               )}
-              {!searched &&
-                friends.map((f) => (
+      {!searched &&
+                (() => {
+                  const ids = new Set(friends.map((f) => f.id));
+                  const merged = [
+                    ...cachedProfiles.filter((p) => !ids.has(p.id)),
+                    ...friends,
+                  ];
+                  return merged.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => {
@@ -264,7 +270,8 @@ export function SendRobuxModal({
                       <span className="text-[12px] text-white/50 truncate">{f.handle}</span>
                     </div>
                   </button>
-                ))}
+                  ));
+                })()}
               {searched && errMsg && (
                 <div className="px-3 py-3 text-center text-red-400 text-sm">{errMsg}</div>
               )}
