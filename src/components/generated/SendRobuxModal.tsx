@@ -144,7 +144,6 @@ export function SendRobuxModal({
     setFriend(null);
     setAmount(200);
     setSearched(false);
-    setCustomAmount("");
   };
   const handleClose = () => {
     reset();
@@ -339,7 +338,6 @@ export function SendRobuxModal({
                     const n = parseInt(amountDraft, 10);
                     if (!isNaN(n) && n > 0) {
                       setAmount(n);
-                      setCustomAmount(String(n));
                     }
                     setAmountEditing(false);
                   }}
@@ -369,7 +367,6 @@ export function SendRobuxModal({
                   key={p}
                   onClick={() => {
                     setAmount(p);
-                    setCustomAmount("");
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-3 h-9 rounded-lg border text-[13px] font-semibold transition-colors",
